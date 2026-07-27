@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DnlFood Menu</title>
+  <link rel="stylesheet" href="style.css">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class='bx bxs-coffee-togo'></i>
+          <span>DnlFood</span>
+        </div>
+        <button class="btn-close-sidebar" id="btnCloseSidebar"><i class='bx bx-x'></i></button>
+      </div>
+      
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active"><i class='bx bx-book-open'></i> Menu</a>
+        <a href="#" class="nav-item" id="navMyOrders">
+          <i class='bx bx-cart'></i> My orders
+          <span class="badge" id="cartBadge" style="display:none;">0</span>
+        </a>
+        <a href="#" class="nav-item"><i class='bx bx-history'></i> History</a>
+        <a href="#" class="nav-item"><i class='bx bx-group'></i> Partners</a>
+        <a href="#" class="nav-item"><i class='bx bx-cog'></i> Settings</a>
+      </nav>
+
+      <div class="nav-bottom">
+        <a href="#" class="nav-item"><i class='bx bx-heart'></i> Donate to shelter</a>
+        <a href="#" class="nav-item"><i class='bx bx-log-out'></i> Log out</a>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <!-- TOP BAR -->
+      <header class="top-bar">
+        <button class="btn-menu-toggle" id="btnMenuToggle"><i class='bx bx-menu'></i></button>
+        <div class="search-bar">
+          <i class='bx bx-search'></i>
+          <input type="text" placeholder="Search">
+        </div>
+        <button class="btn-filter">
+          <i class='bx bx-filter-alt'></i> Filter
+        </button>
+      </header>
+
+      <div class="title-row">
+        <h1 class="page-title">Coffee menu</h1>
+        <button class="btn-add-product" id="btnAddProduct"><i class='bx bx-plus'></i> Add Product</button>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="categories" id="categoryFilter">
+        <button class="category-pill active" data-filter="coffee">Coffee</button>
+        <button class="category-pill" data-filter="non-coffee">Non Coffee</button>
+        <button class="category-pill" data-filter="food">Food</button>
+        <button class="category-pill" data-filter="snack">Snack</button>
+        <button class="category-pill" data-filter="dessert">Dessert</button>
+      </div>
+
+      <!-- PRODUCT GRID (Dynamic) -->
+      <div class="product-grid" id="productGrid">
+        <!-- JS will render products here -->
+      </div>
+    </main>
+
+    <!-- CART SIDEBAR -->
+    <div class="cart-sidebar" id="cartSidebar">
+      <div class="cart-header">
+        <h2>My Orders</h2>
+        <button class="btn-close-cart" id="btnCloseCart"><i class='bx bx-x'></i></button>
+      </div>
+      <div class="cart-items" id="cartItemsContainer">
+        <!-- Items inserted by JS -->
+      </div>
+      <div class="cart-footer">
+        <div class="cart-total">
+          <span>Total:</span>
+          <span id="cartTotalPrice">$0.00</span>
+        </div>
+        <button class="btn-checkout">Checkout</button>
+      </div>
+    </div>
+    
+    <!-- ADD/EDIT PRODUCT MODAL -->
+    <div class="modal-overlay" id="addProductModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">Add New Product</h2>
+          <button class="btn-close-modal" id="btnCloseModal"><i class='bx bx-x'></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" id="newProductName" placeholder="misal: Strawberry Cake">
+          </div>
+          <div class="form-group">
+            <label>Price</label>
+            <input type="text" id="newProductPrice" placeholder="misal: Rp 15.000">
+          </div>
+          <div class="form-group">
+            <label>Upload Photo</label>
+            <input type="file" id="newProductImgFile" accept="image/*">
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="newProductCategory">
+              <option value="coffee">Coffee</option>
+              <option value="non-coffee">Non Coffee</option>
+              <option value="food">Food</option>
+              <option value="snack">Snack</option>
+              <option value="dessert">Dessert</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sizes (comma separated)</label>
+            <input type="text" id="newProductSizes" placeholder="misal: Kecil, Sedang, Besar">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="newProductDesc" rows="3" placeholder="Deskripsi singkat..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btnCancelProduct">Cancel</button>
+          <button class="btn-primary" id="btnSaveProduct">Save Product</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // --- PERSISTENT DATA LOGIC (LocalStorage) ---
+    const defaultProducts = [
+      { id: 'p1', name: 'Cappuccino', price: 15000, priceText: 'Rp 15.000', desc: 'Kopi nikmat dengan paduan susu dan busa tebal.', category: 'coffee', img: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=500&auto=format&fit=crop&q=60', sizes: ['Kecil', 'Besar'] },
+      { id: 'p2', name: 'Coffee Latte', price: 16000, priceText: 'Rp 16.000', desc: 'Kopi susu dengan rasa yang lembut dan manis.', category: 'coffee', img: 'https://images.unsplash.com/photo-1599305090598-fe179d501227?w=500&auto=format&fit=crop&q=60', sizes: ['Kecil', 'Besar'] },
+      { id: 'p3', name: 'Americano', price: 12000, priceText: 'Rp 12.000', desc: 'Kopi hitam murni yang kuat dan menyegarkan.', category: 'coffee', img: 'https://images.unsplash.com/photo-1551030173-122aabc4489c?w=500&auto=format&fit=crop&q=60', sizes: ['Kecil', 'Besar'] },
+      { id: 'p4', name: 'Matcha Latte', price: 20000, priceText: 'Rp 20.000', desc: 'Matcha Jepang premium dengan susu krim hangat.', category: 'non-coffee', img: 'https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?w=500&auto=format&fit=crop&q=60', sizes: ['Kecil', 'Besar'] }
+    ];
+
+    let products = JSON.parse(localStorage.getItem('dnlFoodProducts_v2')) || defaultProducts;
+    
+    // Attempting to maintain the cart on reload too
+    let cart = JSON.parse(localStorage.getItem('dnlFoodCart_v2')) || [];
+
+    function saveProducts() {
+      localStorage.setItem('dnlFoodProducts_v2', JSON.stringify(products));
+    }
+    
+    function saveCart() {
+      localStorage.setItem('dnlFoodCart_v2', JSON.stringify(cart));
+    }
+
+    // --- RENDER PRODUCTS ---
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = '';
+      
+      const currentActiveCategory = document.querySelector('.category-pill.active').getAttribute('data-filter');
+
+      products.forEach(p => {
+        const displayStyle = (currentActiveCategory === p.category) ? 'flex' : 'none';
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.setAttribute('data-category', p.category);
+        card.style.display = displayStyle;
+        
+        card.innerHTML = `
+          <button class="btn-edit-card"><i class='bx bx-edit-alt'></i></button>
+          <div class="product-img">
+            <img src="${p.img}" alt="${p.name}">
+          </div>
+          <div class="product-info">
+            <div class="product-header">
+              <h3 class="product-name" contenteditable="true">${p.name}</h3>
+              <span class="product-price" contenteditable="true">${p.priceText}</span>
+            </div>
+            <p class="product-desc" contenteditable="true">${p.desc}</p>
+            
+            ${(p.sizes && p.sizes.length > 0) ? `
+            <div class="product-size">
+              <span class="size-label">Size</span>
+              <div class="size-options">
+                ${p.sizes.map((s, i) => `<button class="size-btn ${i === 0 ? 'active' : ''}">${s}</button>`).join('')}
+              </div>
+            </div>
+            ` : ''}
+
+            <div class="product-actions">
+              <div class="qty-selector">
+                <button class="qty-btn">-</button>
+                <span class="qty-value">1</span>
+                <button class="qty-btn">+</button>
+              </div>
+              <button class="btn-add-cart">Add to Cart</button>
+            </div>
+          </div>
+        `;
+
+        attachCardEvents(card, p);
+        grid.appendChild(card);
+      });
+    }
+
+    // --- CART LOGIC ---
+    function addToCart(item) {
+      const existing = cart.find(i => i.name === item.name);
+      if (existing) {
+        existing.qty += item.qty;
+      } else {
+        cart.push(item);
+      }
+      saveCart();
+      updateCartUI();
+      
+      const badge = document.getElementById('cartBadge');
+      badge.style.transform = 'scale(1.3)';
+      setTimeout(() => badge.style.transform = 'scale(1)', 200);
+    }
+
+    function removeFromCart(name) {
+      cart = cart.filter(i => i.name !== name);
+      saveCart();
+      updateCartUI();
+    }
+
+    window.removeFromCart = removeFromCart;
+
+    function updateCartUI() {
+      const container = document.getElementById('cartItemsContainer');
+      const badge = document.getElementById('cartBadge');
+      const totalEl = document.getElementById('cartTotalPrice');
+      
+      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+      badge.innerText = totalQty;
+      
+      if(totalQty === 0) {
+        badge.style.display = 'none';
+        container.innerHTML = '<div class="empty-cart-msg">Keranjang kosong.</div>';
+        totalEl.innerText = 'Rp 0';
+        return;
+      } else {
+        badge.style.display = 'flex';
+      }
+      
+      container.innerHTML = '';
+      let totalCost = 0;
+      
+      cart.forEach((item, index) => {
+        const itemTotal = item.price * item.qty;
+        totalCost += itemTotal;
+        
+        const itemEl = document.createElement('div');
+        itemEl.className = 'cart-item';
+        itemEl.innerHTML = `
+          <img src="${item.img}" alt="${item.name}">
+          <div class="cart-item-info">
+            <h4>${item.name}</h4>
+            <div class="cart-item-price-row">
+              <span>Rp ${item.price.toLocaleString('id-ID')} x ${item.qty}</span>
+              <button class="btn-remove-item" onclick="removeFromCart('${item.name.replace(/'/g, "\\'")}')"><i class='bx bx-trash'></i></button>
+            </div>
+          </div>
+        `;
+        container.appendChild(itemEl);
+      });
+      
+      totalEl.innerText = `Rp ${totalCost.toLocaleString('id-ID')}`;
+    }
+
+    // --- CARD EVENTS ---
+    let editingProductId = null;
+    let base64Image = '';
+
+    function openModal() { document.getElementById('addProductModal').classList.add('show'); }
+    function closeModal() { document.getElementById('addProductModal').classList.remove('show'); }
+
+    function attachCardEvents(card, productData) {
+      // Inline Editing Save (contenteditable)
+      card.querySelector('.product-name').addEventListener('blur', (e) => {
+        productData.name = e.target.innerText;
+        saveProducts();
+      });
+      card.querySelector('.product-price').addEventListener('blur', (e) => {
+        productData.priceText = e.target.innerText;
+        productData.price = parseFloat(productData.priceText.replace(/[^0-9]/g,"")) || 0;
+        saveProducts();
+      });
+      card.querySelector('.product-desc').addEventListener('blur', (e) => {
+        productData.desc = e.target.innerText;
+        saveProducts();
+      });
+
+      // +/- qty logic
+      const btnMinus = card.querySelector('.qty-btn:first-child');
+      const btnPlus = card.querySelector('.qty-btn:last-child');
+      const valEl = card.querySelector('.qty-value');
+      
+      btnMinus.addEventListener('click', () => {
+        let val = parseInt(valEl.innerText) || 1;
+        if (val > 1) valEl.innerText = val - 1;
+      });
+      
+      btnPlus.addEventListener('click', () => {
+        let val = parseInt(valEl.innerText) || 1;
+        valEl.innerText = val + 1;
+      });
+
+      // Size selection logic
+      let selectedSize = (productData.sizes && productData.sizes.length > 0) ? productData.sizes[0] : null;
+      const sizeBtns = card.querySelectorAll('.size-btn');
+      sizeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          sizeBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedSize = btn.innerText;
+        });
+      });
+
+      // Add to cart logic
+      const addCartBtn = card.querySelector('.btn-add-cart');
+      addCartBtn.addEventListener('click', () => {
+        // use latest data
+        const qty = parseInt(valEl.innerText) || 1;
+        let cartName = productData.name;
+        if (selectedSize) {
+          cartName += ` (${selectedSize})`;
+        }
+        addToCart({ name: cartName, price: productData.price, priceText: productData.priceText, qty: qty, img: productData.img });
+        valEl.innerText = 1;
+        document.getElementById('cartSidebar').classList.add('open');
+      });
+
+      // Edit logic via Button
+      const editBtn = card.querySelector('.btn-edit-card');
+      editBtn.addEventListener('click', () => {
+        editingProductId = productData.id;
+        document.getElementById('modalTitle').innerText = 'Edit Product';
+        
+        document.getElementById('newProductName').value = productData.name;
+        document.getElementById('newProductPrice').value = productData.priceText;
+        document.getElementById('newProductDesc').value = productData.desc;
+        document.getElementById('newProductCategory').value = productData.category;
+        document.getElementById('newProductSizes').value = productData.sizes ? productData.sizes.join(', ') : '';
+        
+        document.getElementById('newProductImgFile').value = '';
+        base64Image = productData.img;
+        
+        openModal();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Render Initial Data
+      renderProducts();
+      updateCartUI();
+
+      // Category Filter Logic
+      const categoryBtns = document.querySelectorAll('.category-pill');
+      const pageTitle = document.querySelector('.page-title');
+
+      categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          categoryBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          const filter = btn.getAttribute('data-filter');
+          const title = btn.innerText;
+          pageTitle.innerText = title + " menu"; 
+          
+          const allCards = document.querySelectorAll('.product-card');
+          allCards.forEach(card => {
+            if (card.getAttribute('data-category') === filter) {
+              card.style.display = 'flex';
+            } else {
+              card.style.display = 'none';
+            }
+          });
+        });
+      });
+
+      // Main Menu Mobile Toggle
+      const btnMenuToggle = document.getElementById('btnMenuToggle');
+      const btnCloseSidebar = document.getElementById('btnCloseSidebar');
+      const mainSidebar = document.querySelector('.sidebar');
+      if (btnMenuToggle) {
+        btnMenuToggle.addEventListener('click', () => {
+          mainSidebar.classList.toggle('show');
+        });
+      }
+      if (btnCloseSidebar) {
+        btnCloseSidebar.addEventListener('click', () => {
+          mainSidebar.classList.remove('show');
+        });
+      }
+
+      // Sidebar Toggle Logic
+      const cartSidebar = document.getElementById('cartSidebar');
+      const btnMyOrders = document.getElementById('navMyOrders');
+      const btnCloseCart = document.getElementById('btnCloseCart');
+
+      btnMyOrders.addEventListener('click', (e) => {
+        e.preventDefault();
+        cartSidebar.classList.add('open');
+      });
+
+      btnCloseCart.addEventListener('click', () => {
+        cartSidebar.classList.remove('open');
+      });
+
+      // Photo upload reader
+      document.getElementById('newProductImgFile').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            base64Image = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Add/Edit Product Modal Logic
+      const btnAddProduct = document.getElementById('btnAddProduct');
+      const btnCloseModal = document.getElementById('btnCloseModal');
+      const btnCancelProduct = document.getElementById('btnCancelProduct');
+      const btnSaveProduct = document.getElementById('btnSaveProduct');
+
+      btnAddProduct.addEventListener('click', () => {
+        editingProductId = null;
+        document.getElementById('modalTitle').innerText = 'Add New Product';
+        document.getElementById('newProductName').value = '';
+        document.getElementById('newProductPrice').value = '';
+        document.getElementById('newProductImgFile').value = '';
+        document.getElementById('newProductDesc').value = '';
+        document.getElementById('newProductSizes').value = '';
+        base64Image = '';
+        openModal();
+      });
+
+      btnCloseModal.addEventListener('click', closeModal);
+      btnCancelProduct.addEventListener('click', closeModal);
+
+      btnSaveProduct.addEventListener('click', () => {
+        const name = document.getElementById('newProductName').value;
+        const priceText = document.getElementById('newProductPrice').value;
+        const category = document.getElementById('newProductCategory').value;
+        const desc = document.getElementById('newProductDesc').value || 'Menu yang lezat.';
+        const sizesInput = document.getElementById('newProductSizes').value;
+        const sizes = sizesInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        let img = base64Image || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=500&auto=format&fit=crop&q=60';
+        
+        if(!name || !priceText) {
+          alert('Nama dan harga harus diisi!');
+          return;
+        }
+
+        const price = parseFloat(priceText.replace(/[^0-9]/g,"")) || 0;
+
+        if (editingProductId) {
+          // Update existing
+          const product = products.find(p => p.id === editingProductId);
+          if (product) {
+            product.name = name;
+            product.priceText = priceText;
+            product.price = price;
+            product.category = category;
+            product.desc = desc;
+            product.img = img;
+            product.sizes = sizes;
+          }
+        } else {
+          // Create new
+          const newProduct = {
+            id: 'p' + Date.now(),
+            name,
+            price,
+            priceText,
+            desc,
+            category,
+            img,
+            sizes
+          };
+          products.push(newProduct);
+        }
+        
+        saveProducts();
+        renderProducts(); // Re-render everything with new data
+        closeModal();
+      });
+    });
+  </script>
+</body>
+</html>
